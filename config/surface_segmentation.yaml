@@ -1,9 +1,9 @@
 surface_segmentation:
   # Scene cropping
   crop_min_x: 0
-  crop_max_x: 1
-  crop_min_y: -1.0
-  crop_max_y: 1.0
+  crop_max_x: 1.1
+  crop_min_y: -0.25
+  crop_max_y: 0.25
   crop_min_z: 0.3
   crop_max_z: 1.5
   
@@ -11,12 +11,12 @@ surface_segmentation:
   horizontal_tolerance_degrees: 5.0
   margin_above_surface: 0.015
   # Multi-plane detection
-  min_surface_size: 20000
+  min_surface_size: 8000
   max_point_distance: 0.01
   
   # Clustering
   cluster_distance: 0.025
-  min_cluster_size: 500
+  min_cluster_size: 200
   max_cluster_size: 20000
   
   # For downsampling saved point clouds
