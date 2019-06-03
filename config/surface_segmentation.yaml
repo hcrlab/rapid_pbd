@@ -4,7 +4,7 @@ surface_segmentation:
   crop_max_x: 1.1
   crop_min_y: -0.25
   crop_max_y: 0.25
-  crop_min_z: 0.3
+  crop_min_z: 0.1
   crop_max_z: 1.5
   
   # Plane detection
