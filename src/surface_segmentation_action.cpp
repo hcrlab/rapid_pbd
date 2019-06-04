@@ -156,6 +156,8 @@ void SurfaceSegmentationAction::Execute(
   int min_surface_size;
   ros::param::param("surface_segmentation/min_surface_size", min_surface_size,
                     8000);
+  int min_surface_exploration_iteration;
+  ros::param::param("surface_segmentation/min_surface_exploration_iteration", min_surface_exploration_iteration, 300);
   double max_point_distance;
   ros::param::param("surface_segmentation/max_point_distance",
                     max_point_distance, 0.01);
@@ -170,6 +172,7 @@ void SurfaceSegmentationAction::Execute(
   seg.set_cluster_distance(cluster_distance);
   seg.set_min_cluster_size(min_cluster_size);
   seg.set_max_cluster_size(max_cluster_size);
+  seg.set_min_surface_exploration_iteration(min_surface_exploration_iteration);
 
   std::vector<surface_perception::SurfaceObjects> surface_objects;
   bool success = seg.Segment(&surface_objects);

@@ -8,11 +8,12 @@ surface_segmentation:
   crop_max_z: 1.5
   
   # Plane detection
-  horizontal_tolerance_degrees: 5.0
+  horizontal_tolerance_degrees: 10.0
   margin_above_surface: 0.015
   # Multi-plane detection
   min_surface_size: 8000
   max_point_distance: 0.01
+  min_surface_exploration_iteration: 300
   
   # Clustering
   cluster_distance: 0.025
