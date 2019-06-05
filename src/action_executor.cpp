@@ -2,11 +2,13 @@
 
 #include <sstream>
 #include <string>
+#include <limits.h>
 
 #include "actionlib/client/simple_action_client.h"
 #include "actionlib/server/simple_action_server.h"
 #include "control_msgs/FollowJointTrajectoryAction.h"
 #include "control_msgs/GripperCommandAction.h"
+#include "Eigen/Eigen"
 #include "rapid_pbd_msgs/SegmentSurfacesAction.h"
 #include "ros/ros.h"
 #include "visualization_msgs/MarkerArray.h"
@@ -26,6 +28,130 @@ using control_msgs::FollowJointTrajectoryAction;
 using rapid_pbd_msgs::Action;
 
 namespace msgs = rapid_pbd_msgs;
+
+namespace {
+moveit_msgs::CollisionObject GetRightShelfWall(double max_height, const std::vector<msgs::Surface>& surfaces) {
+  geometry_msgs::Point best_position;
+  best_position.y = -1.0 * std::numeric_limits<float>::max(); // Default to right most point
+  geometry_msgs::Quaternion best_orientation;
+  best_orientation.w = 1.0;
+  geometry_msgs::Vector3 best_dims;
+  best_dims.y = 0.015;
+  best_dims.z = max_height;
+  std_msgs::Header header;
+
+  for (size_t i = 0; i < surfaces.size(); i++) {
+    geometry_msgs::Pose pose = surfaces[i].pose_stamped.pose;
+    Eigen::Matrix3f rotation_matrix = Eigen::Quaternionf(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z).toRotationMatrix();
+    Eigen::Vector3f offset = rotation_matrix.col(1);
+    Eigen::Vector3f center = Eigen::Vector3f(pose.position.x, pose.position.y, pose.position.z);
+    Eigen::Vector3f newCenter = center - (offset * surfaces[i].dimensions.y / 2);
+
+    // Find the left most middle point on the right side of the shelf
+    if (newCenter(1) > best_position.y) {
+      best_position.x = newCenter(0);
+      best_position.y = newCenter(1);
+      best_position.z = newCenter(2);
+
+      Eigen::Matrix3f new_rotation;
+      new_rotation.col(0) = rotation_matrix.col(0);
+      // Assume wall is perfectly vertical
+      new_rotation.col(2) = Eigen::Vector3f(0.0, 0.0, 1.0);
+      new_rotation.col(1) = new_rotation.col(2).cross(new_rotation.col(0));
+      Eigen::Quaternionf quaternion(new_rotation);
+      best_orientation.x = quaternion.x();
+      best_orientation.y = quaternion.y();
+      best_orientation.z = quaternion.z();
+      best_orientation.w = quaternion.w();
+
+      best_dims.x = surfaces[i].dimensions.x;
+      header = surfaces[i].pose_stamped.header;
+    }
+  }
+
+  shape_msgs::SolidPrimitive surface_shape;
+  surface_shape.type = shape_msgs::SolidPrimitive::BOX;
+  surface_shape.dimensions.resize(3);
+  surface_shape.dimensions[0] = best_dims.x;
+  surface_shape.dimensions[1] = best_dims.y;
+  surface_shape.dimensions[2] = best_dims.z;
+
+  moveit_msgs::CollisionObject surface_obj;
+  surface_obj.header = header;
+  surface_obj.id = "right_wall"; // Assign id for right wall
+  surface_obj.primitives.push_back(surface_shape);
+
+  geometry_msgs::Pose pose;
+  pose.position = best_position;
+  pose.position.z = max_height / 2;
+  pose.orientation = best_orientation;
+  surface_obj.primitive_poses.push_back(pose);
+  surface_obj.operation = moveit_msgs::CollisionObject::ADD;
+
+  return surface_obj;
+}
+
+moveit_msgs::CollisionObject GetLeftShelfWall(double max_height, const std::vector<msgs::Surface>& surfaces) {
+  geometry_msgs::Point best_position;
+  best_position.y = std::numeric_limits<float>::max(); // Default to left most point
+  geometry_msgs::Quaternion best_orientation;
+  best_orientation.w = 1.0;
+  geometry_msgs::Vector3 best_dims;
+  best_dims.y = 0.015;
+  best_dims.z = max_height;
+  std_msgs::Header header;
+
+  for (size_t i = 0; i < surfaces.size(); i++) {
+    geometry_msgs::Pose pose = surfaces[i].pose_stamped.pose;
+    Eigen::Matrix3f rotation_matrix = Eigen::Quaternionf(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z).toRotationMatrix();
+    Eigen::Vector3f offset = rotation_matrix.col(1);
+    Eigen::Vector3f center = Eigen::Vector3f(pose.position.x, pose.position.y, pose.position.z);
+    Eigen::Vector3f newCenter = center + (offset * surfaces[i].dimensions.y / 2);
+
+    // Find the right most middle point on the left side of the shelf
+    if (newCenter(1) < best_position.y) {
+      best_position.x = newCenter(0);
+      best_position.y = newCenter(1);
+      best_position.z = newCenter(2);
+
+      Eigen::Matrix3f new_rotation;
+      new_rotation.col(0) = rotation_matrix.col(0);
+      // Assume wall is perfectly vertical
+      new_rotation.col(2) = Eigen::Vector3f(0.0, 0.0, 1.0);
+      new_rotation.col(1) = new_rotation.col(2).cross(new_rotation.col(0));
+      Eigen::Quaternionf quaternion(new_rotation);
+      best_orientation.x = quaternion.x();
+      best_orientation.y = quaternion.y();
+      best_orientation.z = quaternion.z();
+      best_orientation.w = quaternion.w();
+
+      best_dims.x = surfaces[i].dimensions.x;
+      header = surfaces[i].pose_stamped.header;
+    }
+  }
+
+  shape_msgs::SolidPrimitive surface_shape;
+  surface_shape.type = shape_msgs::SolidPrimitive::BOX;
+  surface_shape.dimensions.resize(3);
+  surface_shape.dimensions[0] = best_dims.x;
+  surface_shape.dimensions[1] = best_dims.y;
+  surface_shape.dimensions[2] = best_dims.z;
+
+  moveit_msgs::CollisionObject surface_obj;
+  surface_obj.header = header;
+  surface_obj.id = "left_wall"; // Assign id for left wall
+  surface_obj.primitives.push_back(surface_shape);
+
+  geometry_msgs::Pose pose;
+  pose.position = best_position;
+  pose.position.z = max_height / 2;
+  pose.orientation = best_orientation;
+  surface_obj.primitive_poses.push_back(pose);
+  surface_obj.operation = moveit_msgs::CollisionObject::ADD;
+
+  return surface_obj;
+}
+}
 
 namespace rapid {
 namespace pbd {
@@ -142,12 +268,19 @@ bool ActionExecutor::IsDone(std::string* error) const {
           *error = errors::kNoLandmarksDetected;
         }
         world_->surface_box_landmarks.clear();
+
+        // Process the landmark and estimate the max height of the scene
+        double max_height = 0.0; // Assume everything is above the ground
         for (size_t i = 0; i < result->landmarks.size(); ++i) {
           msgs::Landmark landmark;
           ProcessSurfaceBox(result->landmarks[i], &landmark);
+          double height = landmark.pose_stamped.pose.position.z + landmark.surface_box_dims.z / 2;
+          if (height > max_height) {
+            max_height = height;
+          }
           world_->surface_box_landmarks.push_back(landmark);
         }
-        runtime_viz_.PublishSurfaceBoxes(world_->surface_box_landmarks);
+
 
         // Clean up the existing collision surfaces in the world
         for (size_t i = 0; i < world_->surface_ids.size(); i++) {
@@ -188,6 +321,17 @@ bool ActionExecutor::IsDone(std::string* error) const {
           surface_obj.operation = moveit_msgs::CollisionObject::ADD;
           motion_planning_->PublishCollisionObject(surface_obj);
         }
+
+        // Add shelf wall as collision surfaces
+        if (surfaces.size() > 1) {
+          moveit_msgs::CollisionObject right_wall = GetRightShelfWall(max_height, surfaces);
+          world_->surface_ids.push_back(right_wall.id);
+          motion_planning_->PublishCollisionObject(right_wall);
+          moveit_msgs::CollisionObject left_wall = GetLeftShelfWall(max_height, surfaces);
+          world_->surface_ids.push_back(left_wall.id);
+          motion_planning_->PublishCollisionObject(left_wall);
+        }
+        runtime_viz_.PublishSurfaceBoxes(world_->surface_box_landmarks);
         ROS_INFO("Added %ld collision surfaces", world_->surface_ids.size());
       } else {
         ROS_ERROR("Surface segmentation result pointer was null!");

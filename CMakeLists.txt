@@ -7,6 +7,7 @@ project(rapid_pbd)
 find_package(catkin REQUIRED COMPONENTS
   actionlib
   control_msgs
+  eigen_conversions
   geometry_msgs
   mongodb_store
   moveit_core
@@ -35,6 +36,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(PCL REQUIRED)
+find_package(Eigen REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -146,6 +148,7 @@ catkin_package(
   CATKIN_DEPENDS
     actionlib
     control_msgs
+    eigen_conversions
     geometry_msgs
     mongodb_store
     moveit_core
@@ -172,6 +175,7 @@ catkin_package(
   DEPENDS
     Boost
     PCL
+    Eigen
 )
 
 ###########
@@ -184,6 +188,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${Eigen_INCLUDE_DIRS}
 )
 
 ## Libraries
@@ -406,7 +411,7 @@ install(DIRECTORY frontend/build/es6-bundled/
 )
 
 ## Mark executables and/or libraries for installation
-install(TARGETS 
+install(TARGETS
   # Libraries
   rapid_pbd_action_clients
   rapid_pbd_action_executor

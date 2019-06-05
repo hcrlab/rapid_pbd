@@ -9,6 +9,7 @@
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>actionlib</build_depend>
   <build_depend>control_msgs</build_depend>
+  <build_depend>eigen_conversions</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>mongodb_store</build_depend>
   <build_depend>moveit_core</build_depend>
@@ -36,6 +37,7 @@
   <run_depend>actionlib</run_depend>
   <run_depend>control_msgs</run_depend>
   <run_depend>depthcloud_encoder</run_depend>
+  <run_depend>eigen_conversions</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>interactive_marker_proxy</run_depend>
   <run_depend>mongodb_store</run_depend>
