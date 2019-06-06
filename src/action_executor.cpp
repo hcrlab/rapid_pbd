@@ -32,7 +32,8 @@ namespace msgs = rapid_pbd_msgs;
 namespace {
 moveit_msgs::CollisionObject GetShelfWall(double max_height, const std::vector<msgs::Surface>& surfaces, double direction = 1.0) {
   geometry_msgs::Point best_position;
-  best_position.y = direction * std::numeric_limits<float>::max(); // Default to left most point
+  // Default to farthest point in the direction
+  best_position.y = direction * std::numeric_limits<float>::max();
   geometry_msgs::Quaternion best_orientation;
   best_orientation.w = 1.0;
   geometry_msgs::Vector3 best_dims;
@@ -47,7 +48,7 @@ moveit_msgs::CollisionObject GetShelfWall(double max_height, const std::vector<m
     Eigen::Vector3f center = Eigen::Vector3f(pose.position.x, pose.position.y, pose.position.z);
     Eigen::Vector3f newCenter = center + direction * (offset * surfaces[i].dimensions.y / 2);
 
-    // Find the right most middle point on the left side of the shelf
+    // Find the fathest point at the opposite direction. This point would be on the edge of the most restricted shelf surfaces for motion planning. Use shelf wall from this shelf surface
     if ((direction * newCenter(1)) < (direction * best_position.y)) {
       best_position.x = newCenter(0);
       best_position.y = newCenter(1);
@@ -78,7 +79,8 @@ moveit_msgs::CollisionObject GetShelfWall(double max_height, const std::vector<m
 
   moveit_msgs::CollisionObject surface_obj;
   surface_obj.header = header;
-  surface_obj.id = direction > 0 ? "left_wall" : "right_wall"; // Assign id for left wall
+  // Assign shelf wall id based on direction
+  surface_obj.id = direction > 0 ? "left_wall" : "right_wall";
   surface_obj.primitives.push_back(surface_shape);
 
   geometry_msgs::Pose pose;
@@ -277,11 +279,6 @@ bool ActionExecutor::IsDone(std::string* error) const {
           moveit_msgs::CollisionObject left_wall = GetLeftShelfWall(max_height, surfaces);
           world_->surface_ids.push_back(left_wall.id);
           motion_planning_->PublishCollisionObject(left_wall);
-
-          geometry_msgs::Pose right_pose = right_wall.primitive_poses[0];
-          ROS_INFO("%s: (%f, %f, %f)", right_wall.id.c_str(), right_pose.position.x, right_pose.position.y, right_pose.position.z);
-          geometry_msgs::Pose left_pose = left_wall.primitive_poses[0];
-          ROS_INFO("%s: (%f, %f, %f)", left_wall.id.c_str(), left_pose.position.x, left_pose.position.y, left_pose.position.z);
         }
         runtime_viz_.PublishSurfaceBoxes(world_->surface_box_landmarks);
         ROS_INFO("Added %ld collision surfaces", world_->surface_ids.size());
