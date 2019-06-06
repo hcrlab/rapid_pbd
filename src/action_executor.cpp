@@ -1,14 +1,14 @@
 #include "rapid_pbd/action_executor.h"
 
+#include <limits.h>
 #include <sstream>
 #include <string>
-#include <limits.h>
 
+#include "Eigen/Eigen"
 #include "actionlib/client/simple_action_client.h"
 #include "actionlib/server/simple_action_server.h"
 #include "control_msgs/FollowJointTrajectoryAction.h"
 #include "control_msgs/GripperCommandAction.h"
-#include "Eigen/Eigen"
 #include "rapid_pbd_msgs/SegmentSurfacesAction.h"
 #include "ros/ros.h"
 #include "visualization_msgs/MarkerArray.h"
@@ -30,7 +30,9 @@ using rapid_pbd_msgs::Action;
 namespace msgs = rapid_pbd_msgs;
 
 namespace {
-moveit_msgs::CollisionObject GetShelfWall(double max_height, const std::vector<msgs::Surface>& surfaces, double direction = 1.0) {
+moveit_msgs::CollisionObject GetShelfWall(
+    double max_height, const std::vector<msgs::Surface>& surfaces,
+    double direction = 1.0) {
   geometry_msgs::Point best_position;
   // Default to farthest point in the direction
   best_position.y = direction * std::numeric_limits<float>::max();
@@ -43,12 +45,19 @@ moveit_msgs::CollisionObject GetShelfWall(double max_height, const std::vector<m
 
   for (size_t i = 0; i < surfaces.size(); i++) {
     geometry_msgs::Pose pose = surfaces[i].pose_stamped.pose;
-    Eigen::Matrix3f rotation_matrix = Eigen::Quaternionf(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z).toRotationMatrix();
+    Eigen::Matrix3f rotation_matrix =
+        Eigen::Quaternionf(pose.orientation.w, pose.orientation.x,
+                           pose.orientation.y, pose.orientation.z)
+            .toRotationMatrix();
     Eigen::Vector3f offset = rotation_matrix.col(1);
-    Eigen::Vector3f center = Eigen::Vector3f(pose.position.x, pose.position.y, pose.position.z);
-    Eigen::Vector3f newCenter = center + direction * (offset * surfaces[i].dimensions.y / 2);
+    Eigen::Vector3f center =
+        Eigen::Vector3f(pose.position.x, pose.position.y, pose.position.z);
+    Eigen::Vector3f newCenter =
+        center + direction * (offset * surfaces[i].dimensions.y / 2);
 
-    // Find the fathest point at the opposite direction. This point would be on the edge of the most restricted shelf surfaces for motion planning. Use shelf wall from this shelf surface
+    // Find the fathest point at the opposite direction. This point would be on
+    // the edge of the most restricted shelf surfaces for motion planning. Use
+    // shelf wall from this shelf surface
     if ((direction * newCenter(1)) < (direction * best_position.y)) {
       best_position.x = newCenter(0);
       best_position.y = newCenter(1);
@@ -93,14 +102,16 @@ moveit_msgs::CollisionObject GetShelfWall(double max_height, const std::vector<m
   return surface_obj;
 }
 
-moveit_msgs::CollisionObject GetRightShelfWall(double max_height, const std::vector<msgs::Surface>& surfaces) {
+moveit_msgs::CollisionObject GetRightShelfWall(
+    double max_height, const std::vector<msgs::Surface>& surfaces) {
   return GetShelfWall(max_height, surfaces, -1.0);
 }
 
-moveit_msgs::CollisionObject GetLeftShelfWall(double max_height, const std::vector<msgs::Surface>& surfaces) {
+moveit_msgs::CollisionObject GetLeftShelfWall(
+    double max_height, const std::vector<msgs::Surface>& surfaces) {
   return GetShelfWall(max_height, surfaces);
 }
-}
+}  // namespace
 
 namespace rapid {
 namespace pbd {
@@ -219,17 +230,17 @@ bool ActionExecutor::IsDone(std::string* error) const {
         world_->surface_box_landmarks.clear();
 
         // Process the landmark and estimate the max height of the scene
-        double max_height = 0.0; // Assume everything is above the ground
+        double max_height = 0.0;  // Assume everything is above the ground
         for (size_t i = 0; i < result->landmarks.size(); ++i) {
           msgs::Landmark landmark;
           ProcessSurfaceBox(result->landmarks[i], &landmark);
-          double height = landmark.pose_stamped.pose.position.z + landmark.surface_box_dims.z / 2;
+          double height = landmark.pose_stamped.pose.position.z +
+                          landmark.surface_box_dims.z / 2;
           if (height > max_height) {
             max_height = height;
           }
           world_->surface_box_landmarks.push_back(landmark);
         }
-
 
         // Clean up the existing collision surfaces in the world
         for (size_t i = 0; i < world_->surface_ids.size(); i++) {
@@ -273,10 +284,12 @@ bool ActionExecutor::IsDone(std::string* error) const {
 
         // Add shelf wall as collision surfaces
         if (surfaces.size() > 1) {
-          moveit_msgs::CollisionObject right_wall = GetRightShelfWall(max_height, surfaces);
+          moveit_msgs::CollisionObject right_wall =
+              GetRightShelfWall(max_height, surfaces);
           world_->surface_ids.push_back(right_wall.id);
           motion_planning_->PublishCollisionObject(right_wall);
-          moveit_msgs::CollisionObject left_wall = GetLeftShelfWall(max_height, surfaces);
+          moveit_msgs::CollisionObject left_wall =
+              GetLeftShelfWall(max_height, surfaces);
           world_->surface_ids.push_back(left_wall.id);
           motion_planning_->PublishCollisionObject(left_wall);
         }
