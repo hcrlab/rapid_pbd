@@ -11,9 +11,9 @@
 #include "control_msgs/GripperCommandAction.h"
 #include "rapid_pbd_msgs/SegmentSurfacesAction.h"
 #include "ros/ros.h"
-#include "visualization_msgs/MarkerArray.h"
 #include "tf/transform_listener.h"
 #include "transform_graph/graph.h"
+#include "visualization_msgs/MarkerArray.h"
 
 #include "rapid_pbd/action_names.h"
 #include "rapid_pbd/action_utils.h"
@@ -32,24 +32,34 @@ using rapid_pbd_msgs::Action;
 namespace msgs = rapid_pbd_msgs;
 
 namespace {
-bool InRange(const tf::TransformListener& tf_listener, const rapid::pbd::RobotConfig& robot_config, const msgs::Landmark& landmark, moveit_msgs::AttachedCollisionObject* output_obj) {
+bool InRange(const tf::TransformListener& tf_listener,
+             const rapid::pbd::RobotConfig& robot_config,
+             const msgs::Landmark& landmark,
+             moveit_msgs::AttachedCollisionObject* output_obj) {
   double offset = 0.0;
   transform_graph::Graph graph;
   tf::StampedTransform transform;
 
   try {
-    tf_listener.lookupTransform(robot_config.base_link(), "gripper_link", ros::Time(0), transform);
+    tf_listener.lookupTransform(robot_config.base_link(), "gripper_link",
+                                ros::Time(0), transform);
   } catch (tf::TransformException e) {
     ROS_ERROR("%s", e.what());
     return false;
   }
-  graph.Add("gripper", transform_graph::RefFrame(robot_config.base_link()), transform);
-  graph.Add("target_landmark", transform_graph::RefFrame(robot_config.base_link()), landmark.pose_stamped.pose);
+  graph.Add("gripper", transform_graph::RefFrame(robot_config.base_link()),
+            transform);
+  graph.Add("target_landmark",
+            transform_graph::RefFrame(robot_config.base_link()),
+            landmark.pose_stamped.pose);
   transform_graph::Transform gripper_in_landmark;
 
-  bool success = graph.ComputeDescription(transform_graph::LocalFrame("gripper"), transform_graph::RefFrame("target_landmark"), &gripper_in_landmark);
+  bool success = graph.ComputeDescription(
+      transform_graph::LocalFrame("gripper"),
+      transform_graph::RefFrame("target_landmark"), &gripper_in_landmark);
   if (!success) {
-    ROS_ERROR("Error in getting gripper location with respect to landmark %s", landmark.name.c_str());
+    ROS_ERROR("Error in getting gripper location with respect to landmark %s",
+              landmark.name.c_str());
     return false;
   }
   geometry_msgs::Pose pose;
@@ -57,13 +67,16 @@ bool InRange(const tf::TransformListener& tf_listener, const rapid::pbd::RobotCo
   double x_dim = std::max(landmark.surface_box_dims.x, 0.06);
   double y_dim = std::max(landmark.surface_box_dims.y, 0.06);
   double z_dim = std::max(landmark.surface_box_dims.z, 0.06);
-  if (fabs(pose.position.x) < (x_dim / 2)
-  && fabs(pose.position.y) < (y_dim / 2)
-  && fabs(pose.position.z) < (z_dim / 2)) {
+  if (fabs(pose.position.x) < (x_dim / 2) &&
+      fabs(pose.position.y) < (y_dim / 2) &&
+      fabs(pose.position.z) < (z_dim / 2)) {
     transform_graph::Transform landmark_in_gripper;
-    success = graph.ComputeDescription(transform_graph::LocalFrame("target_landmark"), transform_graph::RefFrame("gripper"), &landmark_in_gripper);
+    success = graph.ComputeDescription(
+        transform_graph::LocalFrame("target_landmark"),
+        transform_graph::RefFrame("gripper"), &landmark_in_gripper);
     if (!success) {
-      ROS_ERROR("Error in getting gripper location with respect to landmark %s", landmark.name.c_str());
+      ROS_ERROR("Error in getting gripper location with respect to landmark %s",
+                landmark.name.c_str());
       return false;
     }
     geometry_msgs::Pose new_pose;
@@ -285,8 +298,10 @@ bool ActionExecutor::IsDone(std::string* error) const {
           // Check if there's object to grasp
           for (size_t i = 0; i < world_->surface_box_landmarks.size(); i++) {
             moveit_msgs::AttachedCollisionObject output_obj;
-            if (InRange(tf_listener_, robot_config_, world_->surface_box_landmarks[i], &output_obj)) {
-              ROS_INFO("Grasped the object %s", world_->surface_box_landmarks[i].name.c_str());
+            if (InRange(tf_listener_, robot_config_,
+                        world_->surface_box_landmarks[i], &output_obj)) {
+              ROS_INFO("Grasped the object %s",
+                       world_->surface_box_landmarks[i].name.c_str());
               motion_planning_->PublishAttachedObject(output_obj);
               world_->grasped = true;
             }

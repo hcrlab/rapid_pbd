@@ -209,7 +209,6 @@ void ProgramExecutionServer::Finish(const World& world) {
 }
 
 void ProgramExecutionServer::CleanGraspObject(bool grasped) {
-
   moveit_msgs::AttachedCollisionObject obj;
   obj.object.id = "grasped_object";
   obj.link_name = "gripper_link";

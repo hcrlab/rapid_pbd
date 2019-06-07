@@ -280,14 +280,16 @@ std::string ErrorCodeToString(const MoveItErrorCodes& code) {
   return ss.str();
 }
 
-void MotionPlanning::PublishCollisionObject(const moveit_msgs::CollisionObject& obj) {
+void MotionPlanning::PublishCollisionObject(
+    const moveit_msgs::CollisionObject& obj) {
   moveit_msgs::PlanningScene scene;
   scene.world.collision_objects.push_back(obj);
   scene.is_diff = true;
   planning_scene_pub_.publish(scene);
 }
 
-void MotionPlanning::PublishAttachedObject(const moveit_msgs::AttachedCollisionObject& obj) {
+void MotionPlanning::PublishAttachedObject(
+    const moveit_msgs::AttachedCollisionObject& obj) {
   moveit_msgs::PlanningScene scene;
   scene.robot_state.attached_collision_objects.push_back(obj);
   scene.robot_state.is_diff = true;
