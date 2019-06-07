@@ -12,6 +12,8 @@
 #include "rapid_pbd_msgs/SegmentSurfacesAction.h"
 #include "ros/ros.h"
 #include "visualization_msgs/MarkerArray.h"
+#include "tf/transform_listener.h"
+#include "transform_graph/graph.h"
 
 #include "rapid_pbd/action_names.h"
 #include "rapid_pbd/action_utils.h"
@@ -30,6 +32,65 @@ using rapid_pbd_msgs::Action;
 namespace msgs = rapid_pbd_msgs;
 
 namespace {
+bool InRange(const tf::TransformListener& tf_listener, const rapid::pbd::RobotConfig& robot_config, const msgs::Landmark& landmark, moveit_msgs::AttachedCollisionObject* output_obj) {
+  double offset = 0.0;
+  transform_graph::Graph graph;
+  tf::StampedTransform transform;
+
+  try {
+    tf_listener.lookupTransform(robot_config.base_link(), "gripper_link", ros::Time(0), transform);
+  } catch (tf::TransformException e) {
+    ROS_ERROR("%s", e.what());
+    return false;
+  }
+  graph.Add("gripper", transform_graph::RefFrame(robot_config.base_link()), transform);
+  graph.Add("target_landmark", transform_graph::RefFrame(robot_config.base_link()), landmark.pose_stamped.pose);
+  transform_graph::Transform gripper_in_landmark;
+
+  bool success = graph.ComputeDescription(transform_graph::LocalFrame("gripper"), transform_graph::RefFrame("target_landmark"), &gripper_in_landmark);
+  if (!success) {
+    ROS_ERROR("Error in getting gripper location with respect to landmark %s", landmark.name.c_str());
+    return false;
+  }
+  geometry_msgs::Pose pose;
+  gripper_in_landmark.ToPose(&pose);
+  double x_dim = std::max(landmark.surface_box_dims.x, 0.06);
+  double y_dim = std::max(landmark.surface_box_dims.y, 0.06);
+  double z_dim = std::max(landmark.surface_box_dims.z, 0.06);
+  if (fabs(pose.position.x) < (x_dim / 2)
+  && fabs(pose.position.y) < (y_dim / 2)
+  && fabs(pose.position.z) < (z_dim / 2)) {
+    transform_graph::Transform landmark_in_gripper;
+    success = graph.ComputeDescription(transform_graph::LocalFrame("target_landmark"), transform_graph::RefFrame("gripper"), &landmark_in_gripper);
+    if (!success) {
+      ROS_ERROR("Error in getting gripper location with respect to landmark %s", landmark.name.c_str());
+      return false;
+    }
+    geometry_msgs::Pose new_pose;
+    landmark_in_gripper.ToPose(&new_pose);
+    new_pose.position.y = 0.0;
+    output_obj->link_name = "gripper_link";
+    output_obj->object.header.frame_id = "gripper_link";
+    output_obj->object.id = "grasped_object";
+    output_obj->touch_links.push_back("gripper_link");
+    output_obj->touch_links.push_back("l_gripper_finger_link");
+    output_obj->touch_links.push_back("r_gripper_finger_link");
+
+    shape_msgs::SolidPrimitive object_shape;
+    object_shape.type = object_shape.BOX;
+    object_shape.dimensions.resize(3);
+    object_shape.dimensions[0] = landmark.surface_box_dims.x - offset;
+    object_shape.dimensions[1] = landmark.surface_box_dims.y - offset;
+    object_shape.dimensions[2] = landmark.surface_box_dims.z - offset;
+
+    output_obj->object.primitives.push_back(object_shape);
+    output_obj->object.primitive_poses.push_back(new_pose);
+    output_obj->object.operation = output_obj->object.ADD;
+    return true;
+  }
+  return false;
+}
+
 moveit_msgs::CollisionObject GetShelfWall(
     double max_height, const std::vector<msgs::Surface>& surfaces,
     double direction = 1.0) {
@@ -125,7 +186,8 @@ ActionExecutor::ActionExecutor(const Action& action,
       motion_planning_(motion_planning),
       world_(world),
       robot_config_(robot_config),
-      runtime_viz_(runtime_viz) {}
+      runtime_viz_(runtime_viz),
+      tf_listener_() {}
 
 bool ActionExecutor::IsValid(const Action& action) {
   if (action.type == Action::ACTUATE_GRIPPER) {
@@ -205,7 +267,33 @@ std::string ActionExecutor::Start() {
 bool ActionExecutor::IsDone(std::string* error) const {
   if (action_.type == Action::ACTUATE_GRIPPER) {
     if (action_.actuator_group == Action::GRIPPER) {
-      return clients_->gripper_client.getState().isDone();
+      bool res = clients_->gripper_client.getState().isDone();
+      if (res) {
+        // If already grasped, release object
+        if (world_->grasped) {
+          moveit_msgs::AttachedCollisionObject obj;
+          obj.object.id = "grasped_object";
+          obj.link_name = "gripper_link";
+          obj.touch_links.push_back("gripper_link");
+          obj.touch_links.push_back("l_gripper_finger_link");
+          obj.touch_links.push_back("r_gripper_finger_link");
+          obj.object.operation = moveit_msgs::CollisionObject::REMOVE;
+          motion_planning_->PublishAttachedObject(obj);
+          motion_planning_->PublishCollisionObject(obj.object);
+          world_->grasped = false;
+        } else {
+          // Check if there's object to grasp
+          for (size_t i = 0; i < world_->surface_box_landmarks.size(); i++) {
+            moveit_msgs::AttachedCollisionObject output_obj;
+            if (InRange(tf_listener_, robot_config_, world_->surface_box_landmarks[i], &output_obj)) {
+              ROS_INFO("Grasped the object %s", world_->surface_box_landmarks[i].name.c_str());
+              motion_planning_->PublishAttachedObject(output_obj);
+              world_->grasped = true;
+            }
+          }
+        }
+      }
+      return res;
     } else if (action_.actuator_group == Action::LEFT_GRIPPER) {
       return clients_->l_gripper_client.getState().isDone();
     } else if (action_.actuator_group == Action::RIGHT_GRIPPER) {

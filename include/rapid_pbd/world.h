@@ -17,6 +17,7 @@ struct World {
   JointState joint_state;
   std::vector<rapid_pbd_msgs::Landmark> surface_box_landmarks;
   std::vector<std::string> surface_ids;
+  bool grasped;
 };
 
 void GetWorld(const RobotConfig& robot_config,

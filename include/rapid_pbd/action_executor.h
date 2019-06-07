@@ -1,6 +1,8 @@
 #ifndef _RAPID_PBD_ACTION_EXECUTOR_H_
 #define _RAPID_PBD_ACTION_EXECUTOR_H_
 
+#include "tf/transform_listener.h"
+
 #include "rapid_pbd_msgs/Action.h"
 
 #include "rapid_pbd/action_clients.h"
@@ -40,6 +42,7 @@ class ActionExecutor {
   World* world_;
   const RobotConfig& robot_config_;
   RuntimeVisualizer runtime_viz_;
+  tf::TransformListener tf_listener_;
 
   void ActuateGripper();
   void MoveToJointGoal();

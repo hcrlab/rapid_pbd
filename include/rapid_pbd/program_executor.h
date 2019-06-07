@@ -45,6 +45,8 @@ class ProgramExecutionServer {
   // Runs all necessary steps to finish up a program execution, regardless of
   // whether it succeeded or failed.
   void Finish(const World& world = World());
+
+  void CleanGraspObject(bool grasped);
 };
 }  // namespace pbd
 }  // namespace rapid

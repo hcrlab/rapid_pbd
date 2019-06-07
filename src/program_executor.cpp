@@ -110,6 +110,7 @@ void ProgramExecutionServer::Execute(
   }
 
   World world;
+  world.grasped = false;
   runtime_viz_.PublishSurfaceBoxes(world.surface_box_landmarks);
   std::vector<boost::shared_ptr<StepExecutor> > executors;
   for (size_t i = 0; i < program.steps.size(); ++i) {
@@ -120,6 +121,9 @@ void ProgramExecutionServer::Execute(
     executors.push_back(executor);
     executors.back()->Init();
   }
+
+  // Clean grasp object
+  CleanGraspObject(world.grasped);
 
   for (size_t i = 0; i < program.steps.size(); ++i) {
     ExecuteProgramFeedback feedback;
@@ -200,8 +204,34 @@ void ProgramExecutionServer::Finish(const World& world) {
     planning_scene_pub_.publish(scene);
   }
   ROS_INFO("Removed %ld collision surfaces", world.surface_ids.size());
-
+  CleanGraspObject(world.grasped);
   PublishIsRunning(false);
+}
+
+void ProgramExecutionServer::CleanGraspObject(bool grasped) {
+
+  moveit_msgs::AttachedCollisionObject obj;
+  obj.object.id = "grasped_object";
+  obj.link_name = "gripper_link";
+  obj.touch_links.push_back("gripper_link");
+  obj.touch_links.push_back("l_gripper_finger_link");
+  obj.touch_links.push_back("r_gripper_finger_link");
+  obj.object.operation = moveit_msgs::CollisionObject::REMOVE;
+
+  if (grasped) {
+    moveit_msgs::PlanningScene scene;
+    scene.robot_state.attached_collision_objects.push_back(obj);
+    scene.robot_state.is_diff = true;
+    scene.is_diff = true;
+    planning_scene_pub_.publish(scene);
+  }
+
+  moveit_msgs::PlanningScene scene2;
+  scene2.world.collision_objects.push_back(obj.object);
+  scene2.is_diff = true;
+  planning_scene_pub_.publish(scene2);
+
+  ROS_INFO("Removed grasped object %s", obj.object.id.c_str());
 }
 }  // namespace pbd
 }  // namespace rapid
