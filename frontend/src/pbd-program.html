@@ -286,6 +286,13 @@
                 topic: '/rapid_pbd/surface_segmentation/' + db_id,
               },
             }, {
+              isShown: true,
+              name: 'AR detection',
+              type: 'markerArray',
+              options: {
+                topic: '/rapid_pbd/ar_detection/' + db_id,
+              },
+            },{
               isShown: false,
               name: 'Current robot model',
               type: 'urdf',
@@ -385,7 +392,7 @@
         };
         this.$.eventPub.publish(msg);
         this.currentStepNum = Math.max(this.currentStepNum-1, 0);
-        evt.stopPropagation(); 
+        evt.stopPropagation();
       },
 
       // If a new program is loaded, select step 0.
@@ -454,16 +461,18 @@
           this.$.rviz.set('config.displays.1.isShown', false);
           this.$.rviz.set('config.displays.2.isShown', false);
           this.$.rviz.set('config.displays.3.isShown', false);
-          this.$.rviz.set('config.displays.4.isShown', true);
+          this.$.rviz.set('config.displays.4.isShown', false);
           this.$.rviz.set('config.displays.5.isShown', true);
           this.$.rviz.set('config.displays.6.isShown', true);
+          this.$.rviz.set('config.displays.7.isShown', true);
         } else {
           this.$.rviz.set('config.displays.1.isShown', true);
           this.$.rviz.set('config.displays.2.isShown', true);
           this.$.rviz.set('config.displays.3.isShown', true);
-          this.$.rviz.set('config.displays.4.isShown', false);
+          this.$.rviz.set('config.displays.4.isShown', true);
           this.$.rviz.set('config.displays.5.isShown', false);
           this.$.rviz.set('config.displays.6.isShown', false);
+          this.$.rviz.set('config.displays.7.isShown', false);
         }
       },
     });

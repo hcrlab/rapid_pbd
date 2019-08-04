@@ -46,6 +46,7 @@ class Editor {
   void DeleteAction(const std::string& db_id, size_t step_id, size_t action_id);
   void ViewStep(const std::string& db_id, size_t step_id);
   void DetectSurfaceObjects(const std::string& db_id, size_t step_id);
+  void DetectARTags(const std::string& db_id, size_t step_id);
   void GetJointValues(const std::string& db_id, size_t step_id,
                       size_t action_id, const std::string& actuator_group);
   // Pose actions

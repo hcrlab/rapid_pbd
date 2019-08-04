@@ -6,6 +6,7 @@ namespace pbd {
 // Lists user-facing error messages.
 namespace errors {
 const char kNoLandmarksDetected[] = "No landmarks were detected.";
+const char kNoARTagsDetected[] = "No AR tags were detected.";
 const char kNoLandmarksMatch[] = "Unable to find a matching object.";
 const char kUnreachablePose[] =
     "The robot is unable to reach one of the poses.";

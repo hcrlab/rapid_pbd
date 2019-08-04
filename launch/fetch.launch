@@ -10,7 +10,11 @@
   <arg unless="$(arg sim)" name="depth_topic" default="/head_camera/depth_registered/image_raw" />
   <arg unless="$(arg sim)" name="color_topic" default="/head_camera/rgb/image_raw" />
 
-  <group ns="rapid_pbd"> 
+  <include file="$(find rapid_pbd)/launch/ar_desktop.launch">
+    <arg name="cloud_in" value="$(arg point_cloud_topic)" />
+  </include>
+  
+  <group ns="rapid_pbd">
     <param name="robot" value="fetch" />
     <node pkg="rapid_pbd" type="fetch_action_node" name="fetch_actuator_server" />
     <node pkg="rapid_pbd" type="program_execution_node" name="program_executor">
@@ -21,6 +25,7 @@
     </node>
     <rosparam command="load" file="$(find rapid_pbd)/config/surface_segmentation.yaml" />
     <node pkg="rapid_pbd" type="surface_segmentation_node" name="surface_segmentation_node" args="$(arg point_cloud_topic)" />
+    <node pkg="rapid_pbd" type="ar_detection_node" name="ar_detection_node" args="/ar_pose_marker" />
   </group>
 
   <!-- Depth cloud -->

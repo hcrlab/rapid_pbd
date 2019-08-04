@@ -131,7 +131,7 @@
           } else {
             return landmark.name;
           }
-        } else if (landmark.type === 'surface box') {
+        } else if (landmark.type === 'surface box' || landmark.type === 'AR tag') {
           return landmark.name;
         }
         return 'Unknown landmark';

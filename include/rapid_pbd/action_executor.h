@@ -47,6 +47,7 @@ class ActionExecutor {
   void ActuateGripper();
   void MoveToJointGoal();
   void DetectSurfaceObjects();
+  void DetectARTags();
 
   static void PublishInvalidGroupError(const rapid_pbd_msgs::Action& action);
 };

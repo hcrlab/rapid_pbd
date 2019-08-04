@@ -27,6 +27,7 @@ struct StepVisualization {
   ros::Publisher robot_pub;
   ros::Publisher scene_pub;
   ros::Publisher surface_seg_pub;
+  ros::Publisher ar_detect_pub;
   std::string last_scene_id;
 };
 
@@ -58,16 +59,25 @@ class Visualizer {
 class RuntimeVisualizer {
  public:
   RuntimeVisualizer(const RobotConfig& robot_config,
-                    const ros::Publisher& surface_box_pub);
+                    const ros::Publisher& surface_box_pub,
+                    const ros::Publisher& ar_tag_pub_);
   void PublishSurfaceBoxes(
       const std::vector<rapid_pbd_msgs::Landmark>& box_landmarks) const;
+  void PublishARTags(
+      const std::vector<rapid_pbd_msgs::Landmark>& tag_landmarks) const;
 
  private:
   const RobotConfig& robot_config_;
   ros::Publisher surface_box_pub_;
+  ros::Publisher ar_tag_pub_;
 };
 
 void GetSegmentationMarker(
+    const std::vector<rapid_pbd_msgs::Landmark>& landmarks,
+    const RobotConfig& robot_config,
+    visualization_msgs::MarkerArray* scene_markers);
+
+void GetTagMarker(
     const std::vector<rapid_pbd_msgs::Landmark>& landmarks,
     const RobotConfig& robot_config,
     visualization_msgs::MarkerArray* scene_markers);

@@ -10,6 +10,7 @@
 <link rel="import" href="shared-styles.html">
 <link rel="import" href="pbd-arm-cart-action.html">
 <link rel="import" href="pbd-detect-surface-objects-action.html">
+<link rel="import" href="pbd-detect-ar-tags-action.html">
 <link rel="import" href="pbd-gripper-action.html">
 <link rel="import" href="pbd-head-action.html">
 <link rel="import" href="pbd-joint-angle-action.html">
@@ -54,6 +55,7 @@
             <paper-item data-type="move to joint goal">Move to joint angles</paper-item>
             <paper-item data-type="move head">Move head</paper-item>
             <paper-item data-type="detect surface objects">Detect on-surface objects</paper-item>
+            <paper-item data-type="detect AR tags">Detect AR tags</paper-item>
             <!--paper-item data-type="find custom landmark">Find custom landmark</paper-item-->
           </paper-listbox>
         </paper-dropdown-menu>
@@ -76,6 +78,9 @@
         </template>
         <template is="dom-if" restamp if="[[_displayActionTypeIs(_displayActionType, 'detect surface objects')]]">
           <pbd-detect-surface-objects-action action="{{action}}" program-id="[[programId]]" step-num="[[stepNum]]" ros="[[ros]]"></pbd-detect-surface-objects-action>
+        </template>
+        <template is="dom-if" restamp if="[[_displayActionTypeIs(_displayActionType, 'detect AR tags')]]">
+          <pbd-detect-ar-tags-action action="{{action}}" program-id="[[programId]]" step-num="[[stepNum]]" ros="[[ros]]"></pbd-detect-ar-tags-action>
         </template>
         <template is="dom-if" restamp if="[[_displayActionTypeIs(_displayActionType, 'find custom landmark')]]">
           CustomLandmarks options
@@ -148,6 +153,8 @@
           this._actionDescription = action + ' ' + actuator;
         } else if (this.action.type === 'detect surface objects') {
           this._actionDescription = 'Detect on-surface objects';
+        } else if (this.action.type === 'detect AR tags') {
+          this._actionDescription = 'Detect AR tags';
         } else if (this.action.type === 'find custom landmark') {
           this._actionDescription = 'Find custom landmark';
         }

@@ -233,6 +233,7 @@ bool ActionExecutor::IsValid(const Action& action) {
       return false;
     }
   } else if (action.type == Action::DETECT_SURFACE_OBJECTS) {
+  } else if (action.type == Action::DETECT_AR_TAGS) {
   } else if (action.type == Action::FIND_CUSTOM_LANDMARK) {
   } else {
     ROS_ERROR("Invalid action type: \"%s\"", action.type.c_str());
@@ -273,6 +274,8 @@ std::string ActionExecutor::Start() {
                                          joint_positions);
   } else if (action_.type == Action::DETECT_SURFACE_OBJECTS) {
     DetectSurfaceObjects();
+  } else if (action_.type == Action::DETECT_AR_TAGS) {
+    DetectARTags();
   }
   return "";
 }
@@ -405,6 +408,24 @@ bool ActionExecutor::IsDone(std::string* error) const {
       }
     }
     return done;
+  } else if (action_.type == Action::DETECT_AR_TAGS) {
+    bool done = clients_->ar_detection_client.getState().isDone();
+    if (done) {
+      msgs::DetectARTagsResultConstPtr res = clients_->ar_detection_client.getResult();
+      if (res) {
+        if (res->ar_tags.size() == 0) {
+          *error = errors::kNoARTagsDetected;
+        }
+        world_->ar_tags.clear();
+        world_->ar_tags = res->ar_tags;
+        runtime_viz_.PublishARTags(world_->ar_tags);
+      } else {
+        ROS_ERROR("AR detection result pointer was null!");
+        *error = "AR detection result pointer was null!";
+        return false;
+      }
+    }
+    return done;
   }
   return true;
 }
@@ -426,6 +447,8 @@ void ActionExecutor::Cancel() {
     }
   } else if (action_.type == Action::DETECT_SURFACE_OBJECTS) {
     clients_->surface_segmentation_client.cancelAllGoals();
+  } else if (action_.type == Action::DETECT_AR_TAGS) {
+    clients_->ar_detection_client.cancelAllGoals();
   }
 }
 
@@ -450,6 +473,11 @@ void ActionExecutor::DetectSurfaceObjects() {
   rapid_pbd_msgs::SegmentSurfacesGoal goal;
   goal.save_cloud = false;
   clients_->surface_segmentation_client.sendGoal(goal);
+}
+
+void ActionExecutor::DetectARTags() {
+  rapid_pbd_msgs::DetectARTagsGoal goal;
+  clients_->ar_detection_client.sendGoal(goal);
 }
 
 void ActionExecutor::PublishInvalidGroupError(const Action& action) {

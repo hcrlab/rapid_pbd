@@ -81,6 +81,7 @@
         <h3>Perception</h3>
         <paper-button class="normal" on-tap="selectMoveHead">Move head</paper-button>
         <paper-button class="normal" on-tap="selectDetectSurfaceObjects">Detect on-surface objects</paper-button>
+        <paper-button class="normal" on-tap="selectDetectARTags">Detect AR tags</paper-button>
         <!--paper-button class="normal" on-tap="selectFindCustomLandmark">Find custom landmark</paper-button-->
       </div>
       <template is="dom-if" if="[[params.hasTwoArms]]">
@@ -150,6 +151,13 @@
       selectDetectSurfaceObjects: function () {
         var action = {
           type: 'detect surface objects'
+        };
+        this.fire('iron-select', action);
+      },
+
+      selectDetectARTags: function () {
+        var action = {
+          type: 'detect AR tags'
         };
         this.fire('iron-select', action);
       },

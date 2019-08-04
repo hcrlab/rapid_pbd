@@ -16,6 +16,7 @@ struct World {
   std::string scene_id;
   JointState joint_state;
   std::vector<rapid_pbd_msgs::Landmark> surface_box_landmarks;
+  std::vector<rapid_pbd_msgs::Landmark> ar_tags;
   std::vector<std::string> surface_ids;
   bool grasped;
 };

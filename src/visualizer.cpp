@@ -95,6 +95,26 @@ void Visualizer::Publish(const std::string& program_id, const World& world) {
     }
     step_vizs_[program_id].surface_seg_pub.publish(scene_markers);
   }
+  scene_markers.markers.clear();
+  GetTagMarker(world.ar_tags, robot_config_,
+                        &scene_markers);
+  if (scene_markers.markers.size() > 0) {
+    step_vizs_[program_id].ar_detect_pub.publish(scene_markers);
+  } else {
+    for (size_t i = 0; i < 100; ++i) {
+      Marker blank;
+      blank.ns = "detection";
+      blank.id = i;
+      blank.header.frame_id = base_link;
+      blank.type = Marker::CUBE;
+      blank.pose.orientation.w = 1;
+      blank.scale.x = 0.05;
+      blank.scale.y = 0.05;
+      blank.scale.z = 0.05;
+      scene_markers.markers.push_back(blank);
+    }
+    step_vizs_[program_id].ar_detect_pub.publish(scene_markers);
+  }
 }
 
 void Visualizer::StopPublishing(const std::string& program_id) {
@@ -112,19 +132,29 @@ void Visualizer::CreateStepVizIfNotExists(const std::string& program_id) {
         nh_.advertise<PointCloud2>("scene/" + program_id, 10, true);
     step_vizs_[program_id].surface_seg_pub = nh_.advertise<MarkerArray>(
         "surface_segmentation/" + program_id, 10, true);
+    step_vizs_[program_id].ar_detect_pub = nh_.advertise<MarkerArray>(
+        "ar_detection/" + program_id, 10, true);
     step_vizs_[program_id].last_scene_id = "";
   }
 }
 
 RuntimeVisualizer::RuntimeVisualizer(const RobotConfig& robot_config,
-                                     const ros::Publisher& surface_box_pub)
-    : robot_config_(robot_config), surface_box_pub_(surface_box_pub) {}
+                                     const ros::Publisher& surface_box_pub,
+                                     const ros::Publisher& ar_tag_pub)
+    : robot_config_(robot_config), surface_box_pub_(surface_box_pub), ar_tag_pub_(ar_tag_pub) {}
 
 void RuntimeVisualizer::PublishSurfaceBoxes(
     const std::vector<rapid_pbd_msgs::Landmark>& box_landmarks) const {
   MarkerArray scene_markers;
   GetSegmentationMarker(box_landmarks, robot_config_, &scene_markers);
   surface_box_pub_.publish(scene_markers);
+}
+
+void RuntimeVisualizer::PublishARTags(
+    const std::vector<rapid_pbd_msgs::Landmark>& tag_landmarks) const {
+  MarkerArray scene_markers;
+  GetTagMarker(tag_landmarks, robot_config_, &scene_markers);
+  ar_tag_pub_.publish(scene_markers);
 }
 
 void GetSegmentationMarker(const std::vector<msgs::Landmark>& landmarks,
@@ -177,6 +207,65 @@ void GetSegmentationMarker(const std::vector<msgs::Landmark>& landmarks,
     blank.ns = "segmentation_names";
     scene_markers->markers.push_back(blank);
   }
+}
+
+void GetTagMarker(const std::vector<msgs::Landmark>& landmarks,
+                           const RobotConfig& robot_config,
+                           visualization_msgs::MarkerArray* scene_markers) {
+  std::vector<visualization_msgs::Marker> tags;
+  std::string base_link(robot_config.base_link());
+
+  for (size_t li = 0; li < landmarks.size(); ++li) {
+    const msgs::Landmark& landmark = landmarks[li];
+    Marker tag;
+    tag.ns = "detection";
+    tag.id = li;
+    tag.type = Marker::CUBE;
+    tag.pose = landmark.pose_stamped.pose;
+    tag.scale = landmark.surface_box_dims;
+    tag.color.r = 0;
+    tag.color.g = 0;
+    tag.color.b = 1;
+    tag.color.a = 1;
+    tag.header.frame_id = base_link;
+
+    tags.push_back(tag);
+    scene_markers->markers.push_back(tag);
+  }
+
+  for (size_t i = 0; i < tags.size(); ++i) {
+    Marker marker = scene_markers->markers[i];
+    marker.type = Marker::TEXT_VIEW_FACING;
+    marker.ns = "detection_names";
+    marker.text = landmarks[i].name;
+    marker.pose.position.z += 0.15;
+    marker.scale.x = 0.1;
+    marker.scale.y = 0.1;
+    marker.scale.z = 0.1;
+    marker.color.r = 1;
+    marker.color.g = 0;
+    marker.color.b = 0;
+    marker.color.a = 1;
+    scene_markers->markers.push_back(marker);
+  }
+
+  int num_objects = tags.size();
+  for (size_t i = num_objects; i < 100; ++i) {
+    Marker blank;
+    blank.ns = "detection";
+    blank.id = i;
+    blank.header.frame_id = base_link;
+    blank.type = Marker::CUBE;
+    blank.pose.orientation.w = 1;
+    blank.scale.x = 0.05;
+    blank.scale.y = 0.05;
+    blank.scale.z = 0.05;
+    scene_markers->markers.push_back(blank);
+
+    blank.ns = "detection_names";
+    scene_markers->markers.push_back(blank);
+  }
+
 }
 }  // namespace pbd
 }  // namespace rapid

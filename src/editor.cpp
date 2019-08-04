@@ -62,6 +62,8 @@ void Editor::HandleEvent(const msgs::EditorEvent& event) {
       ViewStep(event.program_info.db_id, event.step_num);
     } else if (event.type == msgs::EditorEvent::DETECT_SURFACE_OBJECTS) {
       DetectSurfaceObjects(event.program_info.db_id, event.step_num);
+    } else if (event.type == msgs::EditorEvent::DETECT_AR_TAGS) {
+      DetectARTags(event.program_info.db_id, event.step_num);
     } else if (event.type == msgs::EditorEvent::GET_JOINT_VALUES) {
       GetJointValues(event.program_info.db_id, event.step_num, event.action_num,
                      event.action.actuator_group);
@@ -209,6 +211,9 @@ void Editor::DeleteAction(const std::string& db_id, size_t step_id,
     DeleteScene(step->scene_id);
     step->scene_id = "";
     DeleteLandmarks(msgs::Landmark::SURFACE_BOX, step);
+  } else if (action.type == msgs::Action::DETECT_AR_TAGS) {
+    step->scene_id = "";
+    DeleteLandmarks(msgs::Landmark::AR_TAG, step);
   } else if (action.type == msgs::Action::FIND_CUSTOM_LANDMARK) {
     DeleteScene(step->scene_id);
     step->scene_id = "";
@@ -267,6 +272,40 @@ void Editor::DetectSurfaceObjects(const std::string& db_id, size_t step_id) {
     msgs::Landmark landmark;
     ProcessSurfaceBox(result->landmarks[i], &landmark);
     program.steps[step_id].landmarks.push_back(landmark);
+  }
+  Update(db_id, program);
+}
+
+void Editor::DetectARTags(const std::string& db_id, size_t step_id) {
+  msgs::DetectARTagsGoal goal;
+  action_clients_->ar_detection_client.sendGoal(goal);
+  bool success = action_clients_->ar_detection_client.waitForResult(
+      ros::Duration(10));
+  if (!success) {
+    ROS_ERROR("Failed to detect AR tags.");
+    return;
+  }
+  msgs::DetectARTagsResult::ConstPtr result =
+      action_clients_->ar_detection_client.getResult();
+
+  msgs::Program program;
+  success = db_.Get(db_id, &program);
+  if (!success) {
+    ROS_ERROR("Unable to update scene for program ID \"%s\"", db_id.c_str());
+    return;
+  }
+  if (step_id >= program.steps.size()) {
+    ROS_ERROR(
+        "Unable to update scene for step %ld, program \"%s\", which has %ld "
+        "steps",
+        step_id, db_id.c_str(), program.steps.size());
+    return;
+  }
+  DeleteScene(program.steps[step_id].scene_id);
+  DeleteLandmarks(msgs::Landmark::AR_TAG, &program.steps[step_id]);
+  for (size_t i = 0; i < result->ar_tags.size(); ++i) {
+    msgs::Landmark tag = result->ar_tags[i];
+    program.steps[step_id].landmarks.push_back(tag);
   }
   Update(db_id, program);
 }
@@ -444,10 +483,10 @@ void Editor::GetNewPose(const rapid_pbd_msgs::Landmark& landmark,
     action->landmark.pose_stamped.header.frame_id = robot_config_.base_link();
     transform_graph::Transform landmark_tf(landmark_transform);
     landmark_tf.ToPose(&action->landmark.pose_stamped.pose);
-  } else if (action->landmark.type == msgs::Landmark::SURFACE_BOX) {
+  } else if (action->landmark.type == msgs::Landmark::SURFACE_BOX || action->landmark.type == msgs::Landmark::AR_TAG) {
     std::string landmark_frame(action->landmark.pose_stamped.header.frame_id);
     if (landmark_frame != robot_config_.base_link()) {
-      ROS_WARN("Landmark not in base frame.");
+      ROS_WARN("Landmark not in base frame. %s!", landmark_frame.c_str());
     }
     graph.Add("landmark", transform_graph::RefFrame(landmark_frame),
               action->landmark.pose_stamped.pose);
@@ -512,7 +551,7 @@ void Editor::ReinterpretPose(const rapid_pbd_msgs::Landmark& new_landmark,
     graph.Add("old landmark",
               transform_graph::RefFrame(robot_config_.base_link()),
               landmark_transform);
-  } else if (action->landmark.type == msgs::Landmark::SURFACE_BOX) {
+  } else if (action->landmark.type == msgs::Landmark::SURFACE_BOX || action->landmark.type == msgs::Landmark::AR_TAG) {
     std::string landmark_frame(action->landmark.pose_stamped.header.frame_id);
     if (landmark_frame != robot_config_.base_link()) {
       ROS_WARN("Landmark not in base frame.");
@@ -545,7 +584,7 @@ void Editor::ReinterpretPose(const rapid_pbd_msgs::Landmark& new_landmark,
     action->landmark.pose_stamped.header.frame_id = robot_config_.base_link();
     transform_graph::Transform landmark_tf(landmark_transform);
     landmark_tf.ToPose(&action->landmark.pose_stamped.pose);
-  } else if (action->landmark.type == msgs::Landmark::SURFACE_BOX) {
+  } else if (action->landmark.type == msgs::Landmark::SURFACE_BOX || action->landmark.type == msgs::Landmark::AR_TAG) {
     std::string landmark_frame(action->landmark.pose_stamped.header.frame_id);
     if (landmark_frame != robot_config_.base_link()) {
       ROS_WARN("Landmark not in base frame.");
@@ -591,6 +630,23 @@ bool Editor::ClosestLandmark(const geometry_msgs::Vector3& ee_position,
     if (squared_distance < closest_distance &&
         squared_distance <= squared_distance_cutoff) {
       *landmark = world_landmark;
+      closest_distance = squared_distance;
+      success = true;
+    }
+  }
+  for (size_t i = 0; i < world.ar_tags.size(); ++i) {
+    const msgs::Landmark& world_tag = world.ar_tags[i];
+    geometry_msgs::Vector3 world_pos;
+    world_pos.x = world_tag.pose_stamped.pose.position.x;
+    world_pos.y = world_tag.pose_stamped.pose.position.y;
+    world_pos.z = world_tag.pose_stamped.pose.position.z;
+    double dx = world_pos.x - ee_position.x;
+    double dy = world_pos.y - ee_position.y;
+    double dz = world_pos.z - ee_position.z;
+    double squared_distance = dx * dx + dy * dy + dz * dz;
+    if (squared_distance < closest_distance &&
+        squared_distance <= squared_distance_cutoff) {
+      *landmark = world_tag;
       closest_distance = squared_distance;
       success = true;
     }

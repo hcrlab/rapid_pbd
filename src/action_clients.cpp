@@ -10,6 +10,7 @@ ActionClients::ActionClients()
       r_gripper_client(kRightGripperActionName, true),
       head_client(kHeadActionName, true),
       surface_segmentation_client(kSurfaceSegmentationActionName, true),
+      ar_detection_client(kARDetectionActionName, true),
       moveit_client(kMoveGroupActionName, true) {}
 }  // namespace pbd
 }  // namespace rapid

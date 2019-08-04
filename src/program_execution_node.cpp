@@ -75,6 +75,11 @@ int main(int argc, char** argv) {
          ros::ok()) {
     ROS_WARN("Waiting for surface segmentation server.");
   }
+  while (!action_clients.ar_detection_client.waitForServer(
+             ros::Duration(5)) &&
+         ros::ok()) {
+    ROS_WARN("Waiting for AR detection server.");
+  }
   while (!action_clients.moveit_client.waitForServer(ros::Duration(5)) &&
          ros::ok()) {
     ROS_WARN("Waiting for MoveIt action server.");
@@ -82,7 +87,9 @@ int main(int argc, char** argv) {
 
   ros::Publisher box_pub =
       nh.advertise<visualization_msgs::MarkerArray>("runtime_segmentation", 10);
-  pbd::RuntimeVisualizer runtime_viz(*robot_config, box_pub);
+  ros::Publisher tag_pub =
+      nh.advertise<visualization_msgs::MarkerArray>("runtime_detection", 10);
+  pbd::RuntimeVisualizer runtime_viz(*robot_config, box_pub, tag_pub);
 
   // Build program DB.
   mongodb_store::MessageStoreProxy proxy(nh, pbd::kMongoProgramCollectionName,

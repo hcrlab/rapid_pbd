@@ -81,20 +81,20 @@
       ],
 
       _computeLandmarks(program, index) {
-        var surfaceLandmarks = [];
+        var targetLandmarks = [];
         if (program && (index || index === 0)) {
           // Search backward for surface landmarks
           for (var i = index - 1; i >= 0; --i) {
             var stepLandmarks = program.steps[i].landmarks;
-            var stepSurfaceLandmarks = [];
+            var stepTargetLandmarks = [];
             for (var li = 0; li < stepLandmarks.length; ++li) {
               var landmark = stepLandmarks[li];
-              if (landmark.type === 'surface box') {
-                stepSurfaceLandmarks.push(landmark);
+              if (landmark.type === 'surface box' || landmark.type === 'AR tag') {
+                stepTargetLandmarks.push(landmark);
               }
             }
-            if (stepSurfaceLandmarks.length > 0) {
-              surfaceLandmarks = stepSurfaceLandmarks;
+            if (stepTargetLandmarks.length > 0) {
+              targetLandmarks = stepTargetLandmarks;
               break;
             }
           }
@@ -109,7 +109,7 @@
             name: 'torso_lift_link'
           }
         ];
-        landmarks = landmarks.concat(surfaceLandmarks);
+        landmarks = landmarks.concat(targetLandmarks);
         this.set('landmarks', landmarks);
       },
 

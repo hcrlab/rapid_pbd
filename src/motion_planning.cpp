@@ -69,7 +69,7 @@ string MotionPlanning::AddPoseGoal(
       return "Unable to get TF transform";
     }
     graph.Add("landmark", tg::RefFrame(base_link), st);
-  } else if (landmark.type == msgs::Landmark::SURFACE_BOX) {
+  } else if (landmark.type == msgs::Landmark::SURFACE_BOX || landmark.type == msgs::Landmark::AR_TAG) {
     msgs::Landmark match;
     bool success = MatchLandmark(*world_, landmark, &match);
     if (!success) {

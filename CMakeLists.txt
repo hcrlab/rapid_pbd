@@ -6,6 +6,7 @@ project(rapid_pbd)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   actionlib
+  ar_track_alvar
   control_msgs
   eigen_conversions
   geometry_msgs
@@ -300,6 +301,12 @@ target_link_libraries(rapid_pbd_surface_segmentation_action
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES})
 
+add_library(rapid_pbd_ar_detection_action src/ar_detection_action.cpp)
+add_dependencies(rapid_pbd_ar_detection_action ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rapid_pbd_ar_detection_action
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES})
+
 add_library(rapid_pbd_visualizer src/visualizer.cpp)
 add_dependencies(rapid_pbd_visualizer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(rapid_pbd_visualizer
@@ -378,6 +385,16 @@ target_link_libraries(rapid_pbd_surface_segmentation_node
   ${catkin_LIBRARIES}
 )
 
+add_executable(rapid_pbd_ar_detection_node src/ar_detection_node.cpp)
+set_target_properties(rapid_pbd_ar_detection_node PROPERTIES OUTPUT_NAME ar_detection_node PREFIX "")
+add_dependencies(rapid_pbd_ar_detection_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rapid_pbd_ar_detection_node
+  rapid_pbd_program_db
+  rapid_pbd_robot_config
+  rapid_pbd_ar_detection_action
+  ${catkin_LIBRARIES}
+)
+
 add_executable(rapid_pbd_pr2_gripper_demo src/pr2_gripper_demo.cpp)
 set_target_properties(rapid_pbd_pr2_gripper_demo PROPERTIES OUTPUT_NAME pr2_gripper_demo PREFIX "")
 add_dependencies(rapid_pbd_pr2_gripper_demo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -439,6 +456,7 @@ install(TARGETS
   rapid_pbd_program_execution_node
   rapid_pbd_pr2_action_node
   rapid_pbd_surface_segmentation_node
+  rapid_pbd_ar_detection_node
   rapid_pbd_pr2_gripper_demo
   rapid_pbd_pr2_arm_joint_demo
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -475,6 +493,7 @@ install(FILES
   launch/pr2_planning_context.launch
   launch/pr2_sim.launch
   launch/web_prereqs.launch
+  launch/ar_desktop.launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 

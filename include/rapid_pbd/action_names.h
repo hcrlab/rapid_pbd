@@ -27,6 +27,7 @@ static const char kHeadActionName[] = "head_action";
 static const char kMoveGroupActionName[] = "move_group";
 
 static const char kSurfaceSegmentationActionName[] = "segment_surfaces_action";
+static const char kARDetectionActionName[] = "ar_detection_action";
 
 namespace pr2 {
 static const char kLeftGripperActionName[] =

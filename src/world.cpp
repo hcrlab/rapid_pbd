@@ -149,6 +149,7 @@ void GetWorld(const RobotConfig& robot_config, const msgs::Program& program,
     }
 
     std::vector<msgs::Landmark> surface_boxes;
+    std::vector<msgs::Landmark> ar_tags;
     for (size_t landmark_i = 0; landmark_i < step.landmarks.size();
          ++landmark_i) {
       const msgs::Landmark& landmark = step.landmarks[landmark_i];
@@ -156,10 +157,16 @@ void GetWorld(const RobotConfig& robot_config, const msgs::Program& program,
         surface_boxes.push_back(landmark);
       }
       // Deal with other landmark types here
+      else if (landmark.type == msgs::Landmark::AR_TAG) {
+        ar_tags.push_back(landmark);
+      }
     }
     // Replace all surface objects if there are any.
     if (surface_boxes.size() > 0) {
       world->surface_box_landmarks = surface_boxes;
+    }
+    if (ar_tags.size() > 0) {
+      world->ar_tags = ar_tags;
     }
   }
 }
@@ -204,6 +211,15 @@ bool MatchLandmark(const World& world, const rapid_pbd_msgs::Landmark& landmark,
       }
     }
     return best <= kMaxDistance;
+  } else if (landmark.type == msgs::Landmark::AR_TAG) {
+    for (size_t i = 0; i < world.ar_tags.size(); i++) {
+      const msgs::Landmark& tag = world.ar_tags[i];
+      if (tag.ar_tag_id == landmark.ar_tag_id) {
+        *match = tag;
+        return true;
+      }
+    }
+    return false;
   } else {
     return false;
   }
