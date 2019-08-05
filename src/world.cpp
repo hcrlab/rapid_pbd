@@ -191,7 +191,7 @@ double BoxDissimilarity(const std::vector<double>& a,
   double dz = (a[2] - b[2]);
   return dx * dx + dy * dy + dz * dz;
 }
-}
+}  // namespace
 
 bool MatchLandmark(const World& world, const rapid_pbd_msgs::Landmark& landmark,
                    rapid_pbd_msgs::Landmark* match) {

@@ -279,8 +279,8 @@ void Editor::DetectSurfaceObjects(const std::string& db_id, size_t step_id) {
 void Editor::DetectARTags(const std::string& db_id, size_t step_id) {
   msgs::DetectARTagsGoal goal;
   action_clients_->ar_detection_client.sendGoal(goal);
-  bool success = action_clients_->ar_detection_client.waitForResult(
-      ros::Duration(10));
+  bool success =
+      action_clients_->ar_detection_client.waitForResult(ros::Duration(10));
   if (!success) {
     ROS_ERROR("Failed to detect AR tags.");
     return;
@@ -483,7 +483,8 @@ void Editor::GetNewPose(const rapid_pbd_msgs::Landmark& landmark,
     action->landmark.pose_stamped.header.frame_id = robot_config_.base_link();
     transform_graph::Transform landmark_tf(landmark_transform);
     landmark_tf.ToPose(&action->landmark.pose_stamped.pose);
-  } else if (action->landmark.type == msgs::Landmark::SURFACE_BOX || action->landmark.type == msgs::Landmark::AR_TAG) {
+  } else if (action->landmark.type == msgs::Landmark::SURFACE_BOX ||
+             action->landmark.type == msgs::Landmark::AR_TAG) {
     std::string landmark_frame(action->landmark.pose_stamped.header.frame_id);
     if (landmark_frame != robot_config_.base_link()) {
       ROS_WARN("Landmark not in base frame. %s!", landmark_frame.c_str());
@@ -551,7 +552,8 @@ void Editor::ReinterpretPose(const rapid_pbd_msgs::Landmark& new_landmark,
     graph.Add("old landmark",
               transform_graph::RefFrame(robot_config_.base_link()),
               landmark_transform);
-  } else if (action->landmark.type == msgs::Landmark::SURFACE_BOX || action->landmark.type == msgs::Landmark::AR_TAG) {
+  } else if (action->landmark.type == msgs::Landmark::SURFACE_BOX ||
+             action->landmark.type == msgs::Landmark::AR_TAG) {
     std::string landmark_frame(action->landmark.pose_stamped.header.frame_id);
     if (landmark_frame != robot_config_.base_link()) {
       ROS_WARN("Landmark not in base frame.");
@@ -584,7 +586,8 @@ void Editor::ReinterpretPose(const rapid_pbd_msgs::Landmark& new_landmark,
     action->landmark.pose_stamped.header.frame_id = robot_config_.base_link();
     transform_graph::Transform landmark_tf(landmark_transform);
     landmark_tf.ToPose(&action->landmark.pose_stamped.pose);
-  } else if (action->landmark.type == msgs::Landmark::SURFACE_BOX || action->landmark.type == msgs::Landmark::AR_TAG) {
+  } else if (action->landmark.type == msgs::Landmark::SURFACE_BOX ||
+             action->landmark.type == msgs::Landmark::AR_TAG) {
     std::string landmark_frame(action->landmark.pose_stamped.header.frame_id);
     if (landmark_frame != robot_config_.base_link()) {
       ROS_WARN("Landmark not in base frame.");

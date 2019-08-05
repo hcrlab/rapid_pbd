@@ -1,7 +1,7 @@
 #include <string>
 
-#include "rapid_pbd/robot_config.h"
 #include "rapid_pbd/ar_detection_action.h"
+#include "rapid_pbd/robot_config.h"
 #include "ros/ros.h"
 
 namespace pbd = rapid::pbd;
@@ -32,7 +32,6 @@ int main(int argc, char** argv) {
     ROS_ERROR("Unsupported robot \"%s\"", robot.c_str());
     return 1;
   }
-
 
   pbd::ARDetectionAction action(topic);
   action.Start();

@@ -77,10 +77,9 @@ void GetSegmentationMarker(
     const RobotConfig& robot_config,
     visualization_msgs::MarkerArray* scene_markers);
 
-void GetTagMarker(
-    const std::vector<rapid_pbd_msgs::Landmark>& landmarks,
-    const RobotConfig& robot_config,
-    visualization_msgs::MarkerArray* scene_markers);
+void GetTagMarker(const std::vector<rapid_pbd_msgs::Landmark>& landmarks,
+                  const RobotConfig& robot_config,
+                  visualization_msgs::MarkerArray* scene_markers);
 }  // namespace pbd
 }  // namespace rapid
 

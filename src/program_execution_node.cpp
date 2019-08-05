@@ -75,8 +75,7 @@ int main(int argc, char** argv) {
          ros::ok()) {
     ROS_WARN("Waiting for surface segmentation server.");
   }
-  while (!action_clients.ar_detection_client.waitForServer(
-             ros::Duration(5)) &&
+  while (!action_clients.ar_detection_client.waitForServer(ros::Duration(5)) &&
          ros::ok()) {
     ROS_WARN("Waiting for AR detection server.");
   }
@@ -118,7 +117,6 @@ int main(int argc, char** argv) {
     scene.world.collision_objects.push_back(floor);
     scene.is_diff = true;
     planning_scene_pub.publish(scene);
-
   }
   pbd::JointStateReader js_reader(robot_config->joint_states_topic());
   js_reader.Start();

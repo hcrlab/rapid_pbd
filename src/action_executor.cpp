@@ -411,7 +411,8 @@ bool ActionExecutor::IsDone(std::string* error) const {
   } else if (action_.type == Action::DETECT_AR_TAGS) {
     bool done = clients_->ar_detection_client.getState().isDone();
     if (done) {
-      msgs::DetectARTagsResultConstPtr res = clients_->ar_detection_client.getResult();
+      msgs::DetectARTagsResultConstPtr res =
+          clients_->ar_detection_client.getResult();
       if (res) {
         if (res->ar_tags.size() == 0) {
           *error = errors::kNoARTagsDetected;

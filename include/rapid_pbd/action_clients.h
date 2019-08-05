@@ -5,8 +5,8 @@
 #include "control_msgs/FollowJointTrajectoryAction.h"
 #include "control_msgs/GripperCommandAction.h"
 #include "moveit_msgs/MoveGroupAction.h"
-#include "rapid_pbd_msgs/SegmentSurfacesAction.h"
 #include "rapid_pbd_msgs/DetectARTagsAction.h"
+#include "rapid_pbd_msgs/SegmentSurfacesAction.h"
 
 namespace rapid {
 namespace pbd {

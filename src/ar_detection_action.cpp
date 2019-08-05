@@ -20,19 +20,17 @@ namespace pbd {
 ARDetectionAction::ARDetectionAction(const std::string& topic)
     : topic_(topic),
       as_(kARDetectionActionName,
-        boost::bind(&ARDetectionAction::Execute, this, _1), false),
+          boost::bind(&ARDetectionAction::Execute, this, _1), false),
       nh_() {}
 
-void ARDetectionAction::Start() {
-  as_.start();
-}
+void ARDetectionAction::Start() { as_.start(); }
 
 void ARDetectionAction::Execute(
     const rapid_pbd_msgs::DetectARTagsGoalConstPtr& goal) {
-
   rapid_pbd_msgs::DetectARTagsResult result;
   boost::shared_ptr<const ar_track_alvar_msgs::AlvarMarkers> tags;
-  tags = ros::topic::waitForMessage<ar_track_alvar_msgs::AlvarMarkers>(topic_, ros::Duration(5.0));
+  tags = ros::topic::waitForMessage<ar_track_alvar_msgs::AlvarMarkers>(
+      topic_, ros::Duration(5.0));
 
   if (!tags) {
     ROS_ERROR("Failed to detect AR tags.");

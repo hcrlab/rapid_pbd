@@ -96,8 +96,7 @@ void Visualizer::Publish(const std::string& program_id, const World& world) {
     step_vizs_[program_id].surface_seg_pub.publish(scene_markers);
   }
   scene_markers.markers.clear();
-  GetTagMarker(world.ar_tags, robot_config_,
-                        &scene_markers);
+  GetTagMarker(world.ar_tags, robot_config_, &scene_markers);
   if (scene_markers.markers.size() > 0) {
     step_vizs_[program_id].ar_detect_pub.publish(scene_markers);
   } else {
@@ -132,8 +131,8 @@ void Visualizer::CreateStepVizIfNotExists(const std::string& program_id) {
         nh_.advertise<PointCloud2>("scene/" + program_id, 10, true);
     step_vizs_[program_id].surface_seg_pub = nh_.advertise<MarkerArray>(
         "surface_segmentation/" + program_id, 10, true);
-    step_vizs_[program_id].ar_detect_pub = nh_.advertise<MarkerArray>(
-        "ar_detection/" + program_id, 10, true);
+    step_vizs_[program_id].ar_detect_pub =
+        nh_.advertise<MarkerArray>("ar_detection/" + program_id, 10, true);
     step_vizs_[program_id].last_scene_id = "";
   }
 }
@@ -141,7 +140,9 @@ void Visualizer::CreateStepVizIfNotExists(const std::string& program_id) {
 RuntimeVisualizer::RuntimeVisualizer(const RobotConfig& robot_config,
                                      const ros::Publisher& surface_box_pub,
                                      const ros::Publisher& ar_tag_pub)
-    : robot_config_(robot_config), surface_box_pub_(surface_box_pub), ar_tag_pub_(ar_tag_pub) {}
+    : robot_config_(robot_config),
+      surface_box_pub_(surface_box_pub),
+      ar_tag_pub_(ar_tag_pub) {}
 
 void RuntimeVisualizer::PublishSurfaceBoxes(
     const std::vector<rapid_pbd_msgs::Landmark>& box_landmarks) const {
@@ -210,8 +211,8 @@ void GetSegmentationMarker(const std::vector<msgs::Landmark>& landmarks,
 }
 
 void GetTagMarker(const std::vector<msgs::Landmark>& landmarks,
-                           const RobotConfig& robot_config,
-                           visualization_msgs::MarkerArray* scene_markers) {
+                  const RobotConfig& robot_config,
+                  visualization_msgs::MarkerArray* scene_markers) {
   std::vector<visualization_msgs::Marker> tags;
   std::string base_link(robot_config.base_link());
 
@@ -265,7 +266,6 @@ void GetTagMarker(const std::vector<msgs::Landmark>& landmarks,
     blank.ns = "detection_names";
     scene_markers->markers.push_back(blank);
   }
-
 }
 }  // namespace pbd
 }  // namespace rapid
